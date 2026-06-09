@@ -39,9 +39,12 @@ app.use((req, res, next) => {
         'http://localhost:3000',
         'http://127.0.0.1:5173',
         'https://zenith-banking-management-oiffw4ug9.vercel.app',
+        'https://zenith-banking-management-jnvzv8g9r.vercel.app',
     ]
     const origin = req.headers.origin
-    if (allowedOrigins.includes(origin)) {
+    const isVercelPreview = /^https:\/\/zenith-banking-management-[a-z0-9]+\.vercel\.app$/.test(origin || '')
+
+    if (allowedOrigins.includes(origin) || isVercelPreview) {
         res.setHeader('Access-Control-Allow-Origin', origin)
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
