@@ -1,0 +1,53 @@
+# Vercel Speed Insights Installation Report
+
+## Summary
+Successfully installed and configured Vercel Speed Insights for the Banking Frontend React + Vite application following the latest official Vercel documentation.
+
+## Changes Made
+
+### Modified Files:
+- **src/App.jsx** - Added SpeedInsights component integration
+
+### What Was Done:
+
+1. **Verified Package Installation**
+   - Confirmed that `@vercel/speed-insights` (v2.0.0) was already present in package.json
+   - Ran `npm install` to ensure all dependencies were properly installed
+
+2. **Configured Speed Insights for React**
+   - Imported `SpeedInsights` component from `@vercel/speed-insights/react`
+   - Added `<SpeedInsights />` component to the main App component
+   - Placed the component inside the `AuthProvider` context wrapper to ensure it tracks all application routes
+
+3. **Implementation Details**
+   - Framework detected: React (v19.2.6) with Vite (v8.0.12)
+   - Integration point: src/App.jsx (main application component)
+   - The SpeedInsights component will automatically track page views and performance metrics across all routes managed by react-router-dom
+
+4. **Verification Completed**
+   - ✅ Build completed successfully (npm run build)
+   - ✅ No linting errors introduced in App.jsx
+   - ✅ All dependencies installed correctly
+   - ✅ Production bundle generated without errors
+
+## Implementation Approach
+
+Following the official Vercel Speed Insights quickstart documentation, I used the React-specific integration:
+- Import: `import { SpeedInsights } from '@vercel/speed-insights/react';`
+- Usage: Added `<SpeedInsights />` as a child component in the main App component
+
+This placement ensures Speed Insights will track performance metrics for all pages and routes in the application.
+
+## Next Steps
+
+To complete the Speed Insights setup:
+1. Enable Speed Insights in the Vercel dashboard for this project
+2. Deploy the application to Vercel
+3. After users visit the site, performance metrics will appear in the Speed Insights dashboard
+
+## Notes
+
+- The SpeedInsights component is lightweight and won't impact application performance
+- It automatically tracks Web Vitals metrics (LCP, FID, CLS, TTFB, FCP)
+- No additional configuration is required for basic usage
+- Pre-existing linting errors in other files were not addressed as they are outside the scope of this task
