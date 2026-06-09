@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://zenith-banking-management.onrender.com';
+const API_URL = `${API_BASE_URL}/api`;
 
 export const api = axios.create({
   baseURL: API_URL,
