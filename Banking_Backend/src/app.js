@@ -33,12 +33,12 @@ const cookieParser = require('cookie-parser')
 
 const app = express();
 
-// FIX: Add CORS so the frontend (localhost:5173) can talk to the backend
 app.use((req, res, next) => {
     const allowedOrigins = [
         'http://localhost:5173',
         'http://localhost:3000',
         'http://127.0.0.1:5173',
+        'https://zenith-banking-management-oiffw4ug9.vercel.app',
     ]
     const origin = req.headers.origin
     if (allowedOrigins.includes(origin)) {
