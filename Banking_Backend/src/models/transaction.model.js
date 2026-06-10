@@ -25,7 +25,11 @@ const transactionSchema = new mongoose.Schema({
     amount: {
         type: Number,
         required: [true, "Amount is required for creating a transaction."],
-        min: [0, "Transaction amount cannot be negative."]
+        min: [0.01, "Transaction amount must be greater than zero."],
+        validate: {
+            validator: (value) => Number.isFinite(value) && Number.isInteger(value * 100),
+            message: "Transaction amount must be a valid number."
+        }
     },
     idempotencyKey: {
         type: String,

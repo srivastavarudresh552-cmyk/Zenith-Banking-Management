@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
 import { accountAPI } from '../services/api';
 import { formatCurrency, maskAccountId } from '../utils/helpers';
 import { Alert, LoadingSpinner } from '../components/Alert';

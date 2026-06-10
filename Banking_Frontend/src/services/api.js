@@ -11,7 +11,7 @@ export const api = axios.create({
   },
 });
 
-// Add token to requests if it exists
+// Keep Authorization as a fallback for browsers/environments that reject cross-site cookies.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
