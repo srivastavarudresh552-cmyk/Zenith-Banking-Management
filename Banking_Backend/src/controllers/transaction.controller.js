@@ -114,8 +114,9 @@ async function createTransaction(req, res) {
                     message: "Both accounts must be ACTIVE to process transaction."
                 })
             }
-
+            console.time("balance");
             const balance = await fromUserAccount.getBalance()
+            console.timeEnd("balance");
 
             if (balance < amount) {
                 return res.status(400).json({
@@ -127,6 +128,7 @@ async function createTransaction(req, res) {
             const session = await mongoose.startSession()
 
             try {
+                console.time("transaction");
                 session.startTransaction()
 
                 transaction = (await transactionModel.create([{
@@ -158,6 +160,7 @@ async function createTransaction(req, res) {
                 )
 
                 await session.commitTransaction()
+                console.timeEnd("balance");
             } catch (error) {
                 await session.abortTransaction()
                 console.error("Transaction error:", error)
