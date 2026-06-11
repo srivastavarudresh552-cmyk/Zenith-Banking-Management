@@ -23,19 +23,16 @@ export const DashboardPage = () => {
       setError('');
       const response = await accountAPI.getUserAccounts();
       const accountsList = response.data.accounts || [];
+
       setAccounts(accountsList);
 
-      for (const account of accountsList) {
-        try {
-          const balanceResponse = await accountAPI.getAccountBalance(account._id);
-          setBalances((prev) => ({
-            ...prev,
-            [account._id]: balanceResponse.data.balance,
-          }));
-        } catch (err) {
-          console.error('Error fetching balance:', err);
-        }
-      }
+      const balancesObj = {};
+
+      accountsList.forEach((account) => {
+        balancesObj[account._id] = account.balance || 0;
+      });
+
+      setBalances(balancesObj);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch accounts');
     } finally {
