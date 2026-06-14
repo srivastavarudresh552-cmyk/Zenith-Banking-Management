@@ -86,6 +86,14 @@ async function createTransaction(req, res) {
                 })
             }
 
+            // New check: prevent transfers between a user's own accounts via this endpoint
+            if (toUserAccount.user.toString() === req.user._id.toString()) {
+                return res.status(400).json({
+                    message: "Transfers can only be made to another user's account."
+                })
+            }
+
+
             const existingTransaction = await transactionModel.findOne({ idempotencyKey })
 
             if (existingTransaction) {
@@ -291,7 +299,144 @@ async function createInitialFundTransaction(req, res) {
     })
 }
 
+async function createSystemAdjustmentTransaction(req, res) {
+    const { userAccount, direction, idempotencyKey, note } = req.body
+    const amount = normalizeAmount(req.body.amount)
+
+    if (!userAccount || !direction || !req.body.amount || !idempotencyKey) {
+        return res.status(400).json({
+            message: "userAccount, direction, amount and idempotencyKey are required."
+        })
+    }
+
+    if (!["CREDIT", "DEBIT"].includes(direction)) {
+        return res.status(400).json({
+            message: "direction must be CREDIT (add funds) or DEBIT (remove funds)."
+        })
+    }
+
+    if (!amount) {
+        return res.status(400).json({
+            message: "Amount must be a positive number with no more than 2 decimal places."
+        })
+    }
+
+    if (!mongoose.isValidObjectId(userAccount)) {
+        return res.status(400).json({ message: "userAccount must be a valid account id." })
+    }
+
+    const systemAccount = await accountModel.findOne({ user: req.user._id })
+
+    if (!systemAccount) {
+        return res.status(400).json({ message: "System account not found." })
+    }
+
+    const targetAccount = await accountModel.findOne({ _id: userAccount })
+
+    if (!targetAccount) {
+        return res.status(400).json({ message: "userAccount not found." })
+    }
+
+    if (targetAccount._id.toString() === systemAccount._id.toString()) {
+        return res.status(400).json({ message: "Cannot adjust the system account itself." })
+    }
+
+    const fromAccount = direction === "CREDIT" ? systemAccount : targetAccount
+    const toAccount = direction === "CREDIT" ? targetAccount : systemAccount
+
+    if (fromAccount.status !== "ACTIVE" || toAccount.status !== "ACTIVE") {
+        return res.status(400).json({
+            message: "Both accounts must be ACTIVE to process this adjustment."
+        })
+    }
+
+    const existingTransaction = await transactionModel.findOne({ idempotencyKey })
+
+    if (existingTransaction) {
+        if (existingTransaction.status === "COMPLETED") {
+            return res.status(200).json({
+                message: "Adjustment already processed.",
+                transaction: existingTransaction
+            })
+        }
+        return res.status(200).json({ message: "Adjustment is still processing or previously failed." })
+    }
+
+    if (direction === "DEBIT") {
+        const balance = await targetAccount.getBalance()
+
+        if (balance < amount) {
+            return res.status(400).json({
+                message: `Insufficient balance on target account. Current balance is ${balance}.`
+            })
+        }
+    }
+
+    const session = await mongoose.startSession()
+    let transaction
+
+    try {
+        session.startTransaction()
+
+        transaction = (await transactionModel.create([{
+            fromAccount: fromAccount._id,
+            toAccount: toAccount._id,
+            amount,
+            idempotencyKey,
+            status: "PENDING"
+        }], { session }))[0]
+
+        await ledgerModel.create([{
+            account: fromAccount._id,
+            amount,
+            transaction: transaction._id,
+            type: "DEBIT"
+        }], { session })
+
+        await ledgerModel.create([{
+            account: toAccount._id,
+            amount,
+            transaction: transaction._id,
+            type: "CREDIT"
+        }], { session })
+
+        await transactionModel.findOneAndUpdate(
+            { _id: transaction._id },
+            { status: "COMPLETED" },
+            { session, new: true }
+        )
+
+        await session.commitTransaction()
+    } catch (error) {
+        await session.abortTransaction()
+        console.error("System adjustment error:", error)
+
+        if (error.code === 11000) {
+            const duplicateTransaction = await transactionModel.findOne({ idempotencyKey })
+            return res.status(200).json({
+                message: "Adjustment already processed.",
+                transaction: duplicateTransaction
+            })
+        }
+
+        return res.status(500).json({ message: "Adjustment failed due to an internal error." })
+    } finally {
+        session.endSession()
+    }
+
+    // TODO: write `note`, req.user._id (operator), direction, target user etc. to a
+    // dedicated audit log collection here — separate from the transaction record.
+    console.log(`[AUDIT] System ${direction} of ${amount} on account ${userAccount} by operator ${req.user._id}. Note: ${note || "n/a"}`)
+
+    return res.status(201).json({
+        message: `Funds ${direction === "CREDIT" ? "credited to" : "debited from"} the account successfully.`,
+        transaction
+    })
+}
+
 module.exports = {
     createTransaction,
-    createInitialFundTransaction
+    createInitialFundTransaction,
+    createSystemAdjustmentTransaction // add
 }
+

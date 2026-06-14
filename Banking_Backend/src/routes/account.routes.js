@@ -21,9 +21,17 @@ router.post("/", authMiddleware.authMiddleware , accountController.createAccount
 router.get("/", authMiddleware.authMiddleware , accountController.getUserAccountController)
 
 /**
+ * -GET /api/accounts/search?query=
+ * -Search other users' accounts by name or exact email (min 3 chars)
+ */
+router.get("/search", authMiddleware.authMiddleware, accountController.searchAccountsController)
+
+/**
  * -GET/api/accounts/balance/:accountId
  */
 
 router.get("/balance/:accountId" , authMiddleware.authMiddleware , accountController.getAccountBalanceController)
+
+
 
 module.exports = router
