@@ -7,7 +7,7 @@ async function createAccountController(req, res) {
     const user = req.user;
 
     const account = await accountModel.create({
-        user : user._id
+        user: user._id
     })
 
     res.status(201).json({
@@ -15,10 +15,17 @@ async function createAccountController(req, res) {
     })
 }
 
-async function getUserAccountController(req , res){
+async function getUserAccountController(req, res) {
 
-    const accounts = await accountModel.find({user: req.user._id}).lean();
+    const accounts = await accountModel.find({ user: req.user._id }).lean();
     const accountIds = accounts.map((account) => account._id)
+
+    // In getUserAccountController, after building balanceByAccountId:
+    accounts: accounts.map((account) => ({
+        ...account,
+        balance: balanceByAccountId.get(account._id.toString()) ?? 0
+        // Note: system account won't appear here since it's filtered by req.user._id
+    }))
 
     const balanceRows = await ledgerModel.aggregate([
         { $match: { account: { $in: accountIds } } },
@@ -57,17 +64,17 @@ async function getUserAccountController(req , res){
 
 }
 
-async function getAccountBalanceController(req,res){
-    const {accountId} = req.params;
+async function getAccountBalanceController(req, res) {
+    const { accountId } = req.params;
 
     const account = await accountModel.findOne({
         _id: accountId,
         user: req.user._id
     })
 
-    if(!account) {
+    if (!account) {
         return res.status(404).json({
-            message : "Account not found"
+            message: "Account not found"
         })
     }
 
@@ -75,11 +82,12 @@ async function getAccountBalanceController(req,res){
     const balance = await account.getBalance();
 
     res.status(200).json({
-        accountId : account._id,
-        balance : balance,
-        message : "Account balance retrieved successfully"
+        accountId: account._id,
+        balance: balance,
+        message: "Account balance retrieved successfully"
     })
 }
+
 
 
 function escapeRegex(str) {

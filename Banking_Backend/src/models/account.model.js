@@ -27,7 +27,17 @@ const accountSchema = new mongoose.Schema({
 
 accountSchema.index({ user: 1, status: 1 }) //Compound Indexing
 
+
 accountSchema.methods.getBalance = async function () {
+    // Check if this is a system user account
+    const userModel = require('./user.model')
+    const owner = await userModel.findById(this.user).select('+systemUser')
+
+    if (owner?.systemUser) {
+        return Infinity
+    }
+
+
     const balanceData = await ledgerModel.aggregate([
         { $match: { account: this._id } },
         {
@@ -44,10 +54,10 @@ accountSchema.methods.getBalance = async function () {
                 },
                 totalCredit: {
                     $sum: {
-                        $cond:[
-                           { $eq: ["$type" , "CREDIT"]},
-                           "$amount",
-                           0
+                        $cond: [
+                            { $eq: ["$type", "CREDIT"] },
+                            "$amount",
+                            0
                         ]
                     }
                 }
@@ -55,13 +65,15 @@ accountSchema.methods.getBalance = async function () {
         },
         {
             $project: {
-                _id : 0,
-                balance : {$subtract : ["$totalCredit" , "$totalDebit"]}
+                _id: 0,
+                balance: { $subtract: ["$totalCredit", "$totalDebit"] }
             }
         }
     ])
 
-    if(balanceData.length === 0){
+
+
+    if (balanceData.length === 0) {
         return 0;
     }
 

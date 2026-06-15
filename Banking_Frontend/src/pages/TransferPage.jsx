@@ -39,7 +39,10 @@ export const TransferPage = () => {
         const list = res.data.accounts || [];
         setMyAccounts(list);
         const map = {};
-        list.forEach((a) => { map[a._id] = a.balance || 0; });
+        list.forEach((a) => {
+          // For system user, show Infinity; otherwise use ledger balance
+          map[a._id] = a.balance ?? 0;
+        });
         setMyBalances(map);
       } catch {
         setError('Failed to load your accounts.');
@@ -100,15 +103,6 @@ export const TransferPage = () => {
       return;
     }
 
-    // Treasury account can issue funds without a balance check
-    if (!isSystemUser) {
-      const balance = myBalances[fromAccount] || 0;
-      if (parsedAmount > balance) {
-        setError(`Insufficient balance. Available: ${formatCurrency(balance)}`);
-        return;
-      }
-    }
-
 
     if (!selectedRecipient) {
       setError('Please search for and select a recipient account.');
@@ -129,10 +123,12 @@ export const TransferPage = () => {
       return;
     }
 
-    const balance = myBalances[fromAccount] || 0;
-    if (parsedAmount > balance) {
-      setError(`Insufficient balance. Available: ${formatCurrency(balance)}`);
-      return;
+    if (!isSystemUser) {
+      const balance = myBalances[fromAccount] || 0;
+      if (parsedAmount > balance) {
+        setError(`Insufficient balance. Available: ${formatCurrency(balance)}`);
+        return;
+      }
     }
 
 
@@ -242,11 +238,12 @@ export const TransferPage = () => {
 
                 {/* Available balance badge */}
 
-
                 {selectedFromBalance !== null && (
                   <div className="balance-display mb-4">
-                    <div className="label">{isSystemUser ? 'Treasury Ledger Balance' : 'Available Balance'}</div>
-                    <div className="amount">{formatCurrency(selectedFromBalance)}</div>
+                    <div className="label">{isSystemUser ? 'Treasury Balance' : 'Available Balance'}</div>
+                    <div className="amount">
+                      {isSystemUser ? '∞ Unlimited' : formatCurrency(selectedFromBalance)}
+                    </div>
                   </div>
                 )}
 
@@ -345,7 +342,7 @@ export const TransferPage = () => {
                     disabled={submitting}
                   />
                   <small className="text-muted d-block mt-1">
-                    <i className="bi bi-info-circle me-1"></i>Minimum ₹0.01 · up to 2 decimal places
+                    <i className="bi bi-info-circle me-1"></i>Minimum $0.01 · up to 2 decimal places
                   </small>
                 </div>
 

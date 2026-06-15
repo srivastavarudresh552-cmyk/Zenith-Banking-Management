@@ -1,10 +1,11 @@
 // Format currency value
 export const formatCurrency = (value) => {
+  if (value === Infinity || value === 'Infinity') return '∞ (Unlimited)'
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-  }).format(value);
-};
+  }).format(value)
+}
 
 // Format date
 export const formatDate = (date) => {
