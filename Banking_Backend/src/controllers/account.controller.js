@@ -15,54 +15,74 @@ async function createAccountController(req, res) {
     })
 }
 
+// async function getUserAccountController(req, res) {
+
+//     const accounts = await accountModel.find({ user: req.user._id }).lean();
+//     const accountIds = accounts.map((account) => account._id)
+
+// In getUserAccountController, after building balanceByAccountId:
+// accounts: accounts.map((account) => ({
+//     ...account,
+//     balance: balanceByAccountId.get(account._id.toString()) ?? 0
+//     // Note: system account won't appear here since it's filtered by req.user._id
+// }))
 async function getUserAccountController(req, res) {
-
     const accounts = await accountModel.find({ user: req.user._id }).lean();
-    const accountIds = accounts.map((account) => account._id)
+    const accountIds = accounts.map((account) => account._id);
+    try {
 
-    // In getUserAccountController, after building balanceByAccountId:
-    accounts: accounts.map((account) => ({
-        ...account,
-        balance: balanceByAccountId.get(account._id.toString()) ?? 0
-        // Note: system account won't appear here since it's filtered by req.user._id
-    }))
-
-    const balanceRows = await ledgerModel.aggregate([
-        { $match: { account: { $in: accountIds } } },
-        {
-            $group: {
-                _id: "$account",
-                totalDebit: {
-                    $sum: {
-                        $cond: [{ $eq: ["$type", "DEBIT"] }, "$amount", 0]
-                    }
-                },
-                totalCredit: {
-                    $sum: {
-                        $cond: [{ $eq: ["$type", "CREDIT"] }, "$amount", 0]
+        const balanceRows = await ledgerModel.aggregate([
+            { $match: { account: { $in: accountIds } } },
+            {
+                $group: {
+                    _id: "$account",
+                    totalDebit: {
+                        $sum: {
+                            $cond: [{ $eq: ["$type", "DEBIT"] }, "$amount", 0]
+                        }
+                    },
+                    totalCredit: {
+                        $sum: {
+                            $cond: [{ $eq: ["$type", "CREDIT"] }, "$amount", 0]
+                        }
                     }
                 }
+            },
+            {
+                $project: {
+                    balance: { $subtract: ["$totalCredit", "$totalDebit"] }
+                }
             }
-        },
-        {
-            $project: {
-                balance: { $subtract: ["$totalCredit", "$totalDebit"] }
-            }
-        }
-    ])
+        ]);
 
-    const balanceByAccountId = new Map(
-        balanceRows.map((row) => [row._id.toString(), row.balance])
-    )
+        const balanceByAccountId = new Map(
+            balanceRows.map((row) => [row._id.toString(), row.balance])
+        );
 
-    res.status(200).json({
-        accounts: accounts.map((account) => ({
-            ...account,
-            balance: balanceByAccountId.get(account._id.toString()) || 0
-        }))
-    })
-
+        res.status(200).json({
+            accounts: accounts.map((account) => ({
+                ...account,
+                balance: balanceByAccountId.get(account._id.toString()) ?? 0
+            }))
+        });
+    } catch (err) {
+        console.error("getUserAccountController error:", err);
+        res.status(500).json({ message: "Failed to fetch accounts" });
+    }
 }
+
+
+
+const balanceByAccountId = new Map(
+    balanceRows.map((row) => [row._id.toString(), row.balance])
+)
+
+res.status(200).json({
+    accounts: accounts.map((account) => ({
+        ...account,
+        balance: balanceByAccountId.get(account._id.toString()) || 0
+    }))
+})
 
 async function getAccountBalanceController(req, res) {
     const { accountId } = req.params;
