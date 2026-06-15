@@ -22,7 +22,8 @@ function serializeUser(user) {
     return {
         _id: user._id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        systemUser: !!user.systemUser
     }
 }
 
@@ -64,8 +65,7 @@ async function userLoginController(req, res) {
             return res.status(400).json({ message: "email and password are required." })
         }
 
-        const user = await userModel.findOne({ email }).select("+password")
-
+        const user = await userModel.findOne({ email }).select("+password +systemUser")
         if (!user) {
             return res.status(401).json({ message: "Email or password is INVALID" })
         }

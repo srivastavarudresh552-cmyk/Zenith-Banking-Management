@@ -110,9 +110,11 @@ export const accountAPI = {
 };
 
 // ── Transactions ─────────────────────────────────────────────────────────────
+
 export const transactionAPI = {
   createTransaction: (data) => api.post('/transactions', data),
   createInitialFunds: (data) => api.post('/transactions/system/initial-funds', data),
+  createSystemSend: (data) => api.post('/transactions/system/send', data), // add
 };
 
 export default api;
