@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/auth';
 import { accountAPI } from '../services/api';
 import { formatCurrency, maskAccountId } from '../utils/helpers';
 import { Alert, LoadingSpinner } from '../components/Alert';
-import axios from 'axios';
+// import axios from 'axios';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
