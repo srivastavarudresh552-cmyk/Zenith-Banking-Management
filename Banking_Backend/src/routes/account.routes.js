@@ -33,5 +33,11 @@ router.get("/search", authMiddleware.authMiddleware, accountController.searchAcc
 router.get("/balance/:accountId" , authMiddleware.authMiddleware , accountController.getAccountBalanceController)
 
 
+/**
+ * -GET /api/accounts/all
+ * -List every account in the system, with owner info and current balance
+ * -System user only (the "source" / treasury account)
+ */
+router.get("/all", authMiddleware.authSystemUserMiddleware, accountController.getAllAccountsController)
 
 module.exports = router
