@@ -18,37 +18,61 @@ export const DashboardPage = () => {
     fetchAccounts();
   }, []);
 
- const fetchAccounts = async () => {
-  try {
-    setLoading(true);
-    setError('');
+  //  const fetchAccounts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError('');
 
-    const token = localStorage.getItem('token');
-    const API_URL = import.meta.env.VITE_API_URL;
+  //     const token = localStorage.getItem('token');
+  //     const API_URL = import.meta.env.VITE_API_URL;
 
-    const res = await axios.get(`${API_URL}/api/accounts`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  //     const res = await axios.get(`${API_URL}/api/accounts`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
-    console.log('API response:', res.data);
+  //     console.log('API response:', res.data);
 
-    setAccounts(res.data.accounts); // ✅ extract the array
-    
-    // ✅ Balance already comes with each account, build the map directly
-    const balanceMap = {};
-    res.data.accounts.forEach((account) => {
-      balanceMap[account._id] = account.balance;
-    });
-    setBalances(balanceMap);
+  //     setAccounts(res.data.accounts); // ✅ extract the array
 
-  } catch (err) {
-    setError(err.response?.data?.message || 'Failed to fetch accounts');
-  } finally {
-    setLoading(false);
-  }
-};
+  //     // ✅ Balance already comes with each account, build the map directly
+  //     const balanceMap = {};
+  //     res.data.accounts.forEach((account) => {
+  //       balanceMap[account._id] = account.balance;
+  //     });
+  //     setBalances(balanceMap);
+
+  //   } catch (err) {
+  //     setError(err.response?.data?.message || 'Failed to fetch accounts');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+  const fetchAccounts = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const res = await accountAPI.getUserAccounts(); // ← use this
+
+      const list = res.data.accounts || [];
+      setAccounts(list);
+
+      const balanceMap = {};
+      list.forEach((account) => {
+        balanceMap[account._id] = account.balance ?? 0;
+      });
+      setBalances(balanceMap);
+
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateAccount = async () => {
     try {
