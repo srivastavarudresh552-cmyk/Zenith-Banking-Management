@@ -6,20 +6,18 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
 
-  logger: true,
-  debug: true,
+  family: 4,
 
-  connectionTimeout: 10000, // 10 sec
+  connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 10000,
 
   auth: {
-    type: 'OAuth2',
+    type: "OAuth2",
     user: process.env.EMAIL_USER,
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: process.env.REFRESH_TOKEN,
-
   },
 });
 
