@@ -40,25 +40,25 @@ const sendEmail = async (to, subject, text, html) => {
 };
 
 async function sendRegistrationEmail(userEmail , name) {
-    const subject = 'Welcome to Backend Ledger!';
-    const text = `Hi ${name},\n\nThank you for registering with Backend Ledger! We're excited to have you on board.\n\nBest regards,\nThe Backend Ledger Team`;
-    const html = `<p>Hi ${name},</p><p>Thank you for registering with Backend Ledger! We're excited to have you on board.</p><p>Best regards,<br>The Backend Ledger Team</p>`;
+    const subject = 'Welcome to Zenith Banking Management System!';
+    const text = `Hi ${name},\n\nThank you for registering with Zenith Banking! We're excited to have you on board.\n\nBest regards,\nThe Zenith Banking Management System Team`;
+    const html = `<p>Hi ${name},</p><p>Thank you for registering with Zenith Banking System! We're excited to have you on board.</p><p>Best regards,<br>The Zenith Banking Management System Team</p>`;
 
     await sendEmail(userEmail, subject, text, html);
 }
 
 async function sendTransactionEmail(userEmail , name , amount , toAccount) {
   const subject = 'Transaction Successful!'
-  const text = `Hello ${name} , \n\n Your transaction of ${amount} to account ${toAccount} was successful\n\nBest Regards,\nThe Backend Ledger Team`;
-  const html = `<p>Hello ${name},</p><p>Your transaction of ${amount} to account ${toAccount} was successful.</p><p>Best Regards,<br>The Backend Ledger Team</p>`;
+  const text = `Hello ${name} , \n\n Your transaction of ${amount} to account ${toAccount} was successful\n\nBest Regards,\nThe Zenith Banking Management System Team`;
+  const html = `<p>Hello ${name},</p><p>Your transaction of ${amount} to account ${toAccount} was successful.</p><p>Best Regards,<br>The Zenith Banking Management System Team</p>`;
 
   await sendEmail(userEmail, subject, text, html);
 }
 
 async function sendTransactionFailureEmail(userEmail , name , amount , toAccount) {
   const subject = 'Transaction Failed!'
-  const text = `Hello ${name} , \n\n Your transaction of ${amount} to account ${toAccount} failed\n\nBest Regards,\nThe Backend Ledger Team`;
-  const html = `<p>Hello ${name},</p><p>Your transaction of ${amount} to account ${toAccount} failed.</p><p>Best Regards,<br>The Backend Ledger Team</p>`;
+  const text = `Hello ${name} , \n\n Your transaction of ${amount} to account ${toAccount} failed\n\nBest Regards,\nThe Zenith Banking Management System Team`;
+  const html = `<p>Hello ${name},</p><p>Your transaction of ${amount} to account ${toAccount} failed.</p><p>Best Regards,<br>The Zenith Banking Management System Team</p>`;
 
   await sendEmail(userEmail, subject, text, html);
 }
