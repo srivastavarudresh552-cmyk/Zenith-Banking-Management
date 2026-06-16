@@ -219,12 +219,12 @@ async function createTransaction(req, res) {
 
             try {
                 console.time("email");
-                // await emailService.sendTransactionEmail(
-                //     req.user.email,
-                //     req.user.name,
-                //     amount,
-                //     toAccount
-                // );
+                await emailService.sendTransactionEmail(
+                    req.user.email,
+                    req.user.name,
+                    amount,
+                    toAccount
+                );
                 console.timeEnd("email");
             } catch (emailError) {
                 console.error("Email notification failed:", emailError);
