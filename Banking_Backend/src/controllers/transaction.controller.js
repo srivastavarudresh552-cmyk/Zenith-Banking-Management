@@ -187,7 +187,10 @@ async function createTransaction(req, res) {
                 await transactionModel.findOneAndUpdate(
                     { _id: transaction._id },
                     { status: "COMPLETED" },
-                    { session, new: true }
+                    {
+                        session,
+                        returnDocument: 'after'
+                    }
                 );
                 console.timeEnd("updateTransaction");
 
@@ -319,7 +322,10 @@ async function createInitialFundTransaction(req, res) {
         await transactionModel.findOneAndUpdate(
             { _id: transaction._id },
             { status: "COMPLETED" },
-            { session, new: true }
+            {
+                session,
+                returnDocument: 'after'
+            }
         )
 
         await session.commitTransaction()
@@ -444,7 +450,10 @@ async function createSystemAdjustmentTransaction(req, res) {
         await transactionModel.findOneAndUpdate(
             { _id: transaction._id },
             { status: "COMPLETED" },
-            { session, new: true }
+            {
+                session,
+                returnDocument: 'after'
+            }
         )
 
         await session.commitTransaction()
