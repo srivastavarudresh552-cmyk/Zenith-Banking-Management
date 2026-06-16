@@ -217,18 +217,15 @@ async function createTransaction(req, res) {
                 session.endSession();
             }
 
-            try {
-                console.time("email");
-                await emailService.sendTransactionEmail(
+            emailService
+                .sendTransactionEmail(
                     req.user.email,
                     req.user.name,
                     amount,
                     toAccount
-                );
-                console.timeEnd("email");
-            } catch (emailError) {
-                console.error("Email notification failed:", emailError);
-            }
+                )
+                .catch(err => console.error("Email notification failed:", err));
+
 
             console.timeEnd("TOTAL");
 
