@@ -1,6 +1,9 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 const dns = require("dns");
+dns.lookup("smtp.gmail.com", { family: 4 }, (err, address, family) => {
+  console.log("DIRECT DNS TEST:", address, "IPv" + family);
+});
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
