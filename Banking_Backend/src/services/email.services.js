@@ -1,15 +1,12 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
-
+const dns = require("dns");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
   secure: false,
-
-  family: 4,
+  requireTLS: true,
 
   connectionTimeout: 10000,
   greetingTimeout: 10000,
@@ -22,8 +19,11 @@ const transporter = nodemailer.createTransport({
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: process.env.REFRESH_TOKEN,
   },
-});
 
+  lookup(hostname, options, callback) {
+    dns.lookup(hostname, { family: 4 }, callback);
+  }
+});
 // Verify the connection configuration
 transporter.verify((error, success) => {
   if (error) {
