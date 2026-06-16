@@ -48,6 +48,7 @@ async function createTransaction(req, res) {
     const { fromAccount, toAccount, idempotencyKey } = req.body
     const amount = normalizeAmount(req.body.amount)
 
+
     if (!fromAccount || !toAccount || !req.body.amount || !idempotencyKey) {
         return res.status(400).json({
             message: "fromAccount, toAccount, amount and idempotencyKey are required"
@@ -73,137 +74,176 @@ async function createTransaction(req, res) {
     }
 
     try {
+        console.log("createTransaction endpoint hit");
+        console.time("TOTAL");
+
         return await withAccountLock(fromAccount, async () => {
+
+            console.time("findAccounts");
             const fromUserAccount = await accountModel.findOne({
                 _id: fromAccount,
                 user: req.user._id
-            })
-            const toUserAccount = await accountModel.findOne({ _id: toAccount })
+            });
+            const toUserAccount = await accountModel.findOne({
+                _id: toAccount
+            });
+            console.timeEnd("findAccounts");
 
             if (!fromUserAccount || !toUserAccount) {
                 return res.status(400).json({
                     message: "Invalid fromAccount or toAccount"
-                })
+                });
             }
 
-            // New check: prevent transfers between a user's own accounts via this endpoint
             if (toUserAccount.user.toString() === req.user._id.toString()) {
                 return res.status(400).json({
                     message: "Transfers can only be made to another user's account."
-                })
+                });
             }
 
-
-            const existingTransaction = await transactionModel.findOne({ idempotencyKey })
+            console.time("existingTransaction");
+            const existingTransaction = await transactionModel.findOne({ idempotencyKey });
+            console.timeEnd("existingTransaction");
 
             if (existingTransaction) {
                 if (existingTransaction.status === "COMPLETED") {
                     return res.status(200).json({
                         message: "Transaction already processed.",
                         transaction: existingTransaction
-                    })
+                    });
                 }
 
                 if (existingTransaction.status === "PENDING") {
-                    return res.status(200).json({ message: "Transaction is still processing." })
+                    return res.status(200).json({
+                        message: "Transaction is still processing."
+                    });
                 }
 
                 if (existingTransaction.status === "FAILED") {
-                    return res.status(500).json({ message: "Transaction processing failed, please retry" })
+                    return res.status(500).json({
+                        message: "Transaction processing failed, please retry"
+                    });
                 }
 
                 if (existingTransaction.status === "REVERSED") {
-                    return res.status(500).json({ message: "The transaction was reversed, please retry." })
+                    return res.status(500).json({
+                        message: "The transaction was reversed, please retry."
+                    });
                 }
             }
 
             if (fromUserAccount.status !== "ACTIVE" || toUserAccount.status !== "ACTIVE") {
                 return res.status(400).json({
                     message: "Both accounts must be ACTIVE to process transaction."
-                })
+                });
             }
-            console.time("balance");
-            const balance = await fromUserAccount.getBalance()
-            console.timeEnd("balance");
+
+            const balance = await fromUserAccount.getBalance();
 
             if (balance < amount) {
                 return res.status(400).json({
                     message: `Insufficient balance. Current balance is ${balance}. Requested amount is ${amount}`
-                })
+                });
             }
 
-            let transaction
-            const session = await mongoose.startSession()
+            let transaction;
+
+            console.time("startSession");
+            const session = await mongoose.startSession();
+            console.timeEnd("startSession");
 
             try {
-                console.time("transaction");
-                session.startTransaction()
+                session.startTransaction();
 
+                console.time("createTransaction");
                 transaction = (await transactionModel.create([{
                     fromAccount,
                     toAccount,
                     amount,
                     idempotencyKey,
                     status: "PENDING"
-                }], { session }))[0]
+                }], { session }))[0];
+                console.timeEnd("createTransaction");
 
+                console.time("debitLedger");
                 await ledgerModel.create([{
                     account: fromUserAccount._id,
                     amount,
                     transaction: transaction._id,
                     type: "DEBIT"
-                }], { session })
+                }], { session });
+                console.timeEnd("debitLedger");
 
+                console.time("creditLedger");
                 await ledgerModel.create([{
                     account: toUserAccount._id,
                     amount,
                     transaction: transaction._id,
                     type: "CREDIT"
-                }], { session })
+                }], { session });
+                console.timeEnd("creditLedger");
 
+                console.time("updateTransaction");
                 await transactionModel.findOneAndUpdate(
                     { _id: transaction._id },
                     { status: "COMPLETED" },
                     { session, new: true }
-                )
+                );
+                console.timeEnd("updateTransaction");
 
-                await session.commitTransaction()
-                console.timeEnd("balance");
+                console.time("commit");
+                await session.commitTransaction();
+                console.timeEnd("commit");
+
             } catch (error) {
-                await session.abortTransaction()
-                console.error("Transaction error:", error)
+                await session.abortTransaction();
+                console.error("Transaction error:", error);
 
                 if (error.code === 11000) {
-                    const duplicateTransaction = await transactionModel.findOne({ idempotencyKey })
+                    const duplicateTransaction = await transactionModel.findOne({ idempotencyKey });
                     return res.status(200).json({
                         message: "Transaction already processed.",
                         transaction: duplicateTransaction
-                    })
+                    });
                 }
 
                 return res.status(500).json({
                     message: "Transaction failed due to an internal error, please retry."
-                })
+                });
             } finally {
-                session.endSession()
+                session.endSession();
             }
 
             try {
-                await emailService.sendTransactionEmail(req.user.email, req.user.name, amount, toAccount)
+                console.time("email");
+                // await emailService.sendTransactionEmail(
+                //     req.user.email,
+                //     req.user.name,
+                //     amount,
+                //     toAccount
+                // );
+                console.timeEnd("email");
             } catch (emailError) {
-                console.error("Email notification failed:", emailError)
+                console.error("Email notification failed:", emailError);
             }
+
+            console.timeEnd("TOTAL");
 
             return res.status(201).json({
                 message: "Transaction completed successfully.",
                 transaction
-            })
-        })
+            });
+        });
+
     } catch (error) {
-        console.error("Transfer error:", error)
-        return res.status(500).json({ message: "Internal server error" })
+        console.error("Transfer error:", error);
+        return res.status(500).json({
+            message: "Internal server error"
+        });
     }
 }
+
+
 
 async function createInitialFundTransaction(req, res) {
     const { toAccount, idempotencyKey } = req.body
@@ -363,6 +403,7 @@ async function createSystemAdjustmentTransaction(req, res) {
     }
 
     if (direction === "DEBIT") {
+
         const balance = await targetAccount.getBalance()
 
         if (balance < amount) {

@@ -37,7 +37,7 @@ accountSchema.methods.getBalance = async function () {
         return Infinity
     }
 
-
+    console.time("aggregate");
     const balanceData = await ledgerModel.aggregate([
         { $match: { account: this._id } },
         {
@@ -70,7 +70,7 @@ accountSchema.methods.getBalance = async function () {
             }
         }
     ])
-
+    console.timeEnd("aggregate");
 
 
     if (balanceData.length === 0) {
