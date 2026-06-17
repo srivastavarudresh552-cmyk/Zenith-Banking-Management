@@ -1,6 +1,12 @@
 require('dotenv').config();
+const dns = require('dns');
 const nodemailer = require('nodemailer');
 const { google } = require("googleapis");
+
+// Force Node's DNS resolution to prefer IPv4. Render's network (on many plans)
+// has no outbound IPv6 route, so without this, nodemailer can pick the AAAA
+// record for smtp.gmail.com and the TCP connect simply hangs/fails with ENETUNREACH.
+dns.setDefaultResultOrder('ipv4first');
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -23,7 +29,10 @@ oauth2Client.setCredentials({
 })();
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,       // true for port 465, false for 587
+  family: 4,           // force IPv4 - this is the actual fix
   auth: {
     type: 'OAuth2',
     user: process.env.EMAIL_USER,
@@ -64,6 +73,7 @@ const sendEmail = async (to, subject, text, html) => {
     console.error("EMAIL ERROR FULL:", error);
   }
 };
+
 async function sendRegistrationEmail(userEmail, name) {
   const subject = 'Welcome to Zenith Banking Management System!';
   const text = `Hi ${name},\n\nThank you for registering with Zenith Banking! We're excited to have you on board.\n\nBest regards,\nThe Zenith Banking Management System Team`;
