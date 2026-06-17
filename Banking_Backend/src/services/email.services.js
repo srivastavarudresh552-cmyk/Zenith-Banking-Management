@@ -37,6 +37,10 @@ const transporter = nodemailer.createTransport({
 transporter.verify((error, success) => {
   if (error) {
     console.error('Error connecting to email server:', error);
+    console.log(process.env.EMAIL_USER);
+    console.log(process.env.CLIENT_ID ? "CLIENT OK" : "CLIENT MISSING");
+    console.log(process.env.CLIENT_SECRET ? "SECRET OK" : "SECRET MISSING");
+    console.log(process.env.REFRESH_TOKEN ? "REFRESH OK" : "REFRESH MISSING");
   } else {
     console.log('Email server is ready to send messages');
   }
