@@ -1,32 +1,38 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
-const dns = require("dns");
-dns.lookup("smtp.gmail.com", { family: 4 }, (err, address, family) => {
-  console.log("DIRECT DNS TEST:", address, "IPv" + family);
+const { google } = require("googleapis");
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.CLIENT_ID,
+  process.env.CLIENT_SECRET
+);
+
+oauth2Client.setCredentials({
+  refresh_token: process.env.REFRESH_TOKEN,
 });
 
+(async () => {
+  try {
+    const token = await oauth2Client.getAccessToken();
+
+    console.log("ACCESS TOKEN SUCCESS");
+    console.log(token.token);
+  } catch (err) {
+    console.error("ACCESS TOKEN FAILED", err);
+  }
+})();
+
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  requireTLS: true,
-
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-
+  service: 'gmail',
   auth: {
-    type: "OAuth2",
+    type: 'OAuth2',
     user: process.env.EMAIL_USER,
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: process.env.REFRESH_TOKEN,
   },
-
-  lookup(hostname, options, callback) {
-    dns.lookup(hostname, { family: 4 }, callback);
-  }
 });
+
 // Verify the connection configuration
 transporter.verify((error, success) => {
   if (error) {
