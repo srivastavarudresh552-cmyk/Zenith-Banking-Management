@@ -1,44 +1,20 @@
 require('dotenv').config();
 const dns = require('dns');
 const nodemailer = require('nodemailer');
-const { google } = require("googleapis");
 
 // Force Node's DNS resolution to prefer IPv4. Render's network (on many plans)
 // has no outbound IPv6 route, so without this, nodemailer can pick the AAAA
 // record for smtp.gmail.com and the TCP connect simply hangs/fails with ENETUNREACH.
 dns.setDefaultResultOrder('ipv4first');
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.CLIENT_ID,
-  process.env.CLIENT_SECRET
-);
-
-oauth2Client.setCredentials({
-  refresh_token: process.env.REFRESH_TOKEN,
-});
-
-(async () => {
-  try {
-    const token = await oauth2Client.getAccessToken();
-
-    console.log("ACCESS TOKEN SUCCESS");
-    console.log(token.token);
-  } catch (err) {
-    console.error("ACCESS TOKEN FAILED", err);
-  }
-})();
-
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
-  secure: true,       // true for port 465, false for 587
-  family: 4,           // force IPv4 - this is the actual fix
+  secure: true,        // true for port 465, false for 587
+  family: 4,            // force IPv4 - this is the actual fix
   auth: {
-    type: 'OAuth2',
     user: process.env.EMAIL_USER,
-    clientId: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    refreshToken: process.env.REFRESH_TOKEN,
+    pass: process.env.EMAIL_APP_PASSWORD,
   },
 });
 
@@ -47,9 +23,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('Error connecting to email server:', error);
     console.log(process.env.EMAIL_USER);
-    console.log(process.env.CLIENT_ID ? "CLIENT OK" : "CLIENT MISSING");
-    console.log(process.env.CLIENT_SECRET ? "SECRET OK" : "SECRET MISSING");
-    console.log(process.env.REFRESH_TOKEN ? "REFRESH OK" : "REFRESH MISSING");
+    console.log(process.env.EMAIL_APP_PASSWORD ? "APP PASSWORD OK" : "APP PASSWORD MISSING");
   } else {
     console.log('Email server is ready to send messages');
   }
